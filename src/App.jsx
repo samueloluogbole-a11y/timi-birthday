@@ -1,8 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 
 const EMOJIS = ["🌿", "✨", "🥂", "🌙", "🦋", "💫", "🌾", "🎶", "💌", "🕊️", "🌱", "⭐"];
-const STORAGE_KEY = "timi-birthday-messages-v2";
 const ADMIN_PASSWORD = "Birthday";
+const SUPABASE_URL = "https://yaotchbxrilanlhebqgt.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlhb3RjaGJ4cmlsYW5saGVicWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzgwNzIsImV4cCI6MjA5NDcxNDA3Mn0.L5Hfq6FuIaqq8pwsYIr3b0U76J9RBOjDl0CPisJGcqo";
+
+const db = async (path, options = {}) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "",
+      ...options.headers,
+    },
+    ...options,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+};
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -12,7 +29,7 @@ export default function App() {
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
   const [photo, setPhoto] = useState(null);
-  const [heroLoaded, setHeroLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -20,32 +37,31 @@ export default function App() {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const result = await window.storage.get(STORAGE_KEY, true);
-        if (result?.value) setMessages(JSON.parse(result.value));
-        const photoResult = await window.storage.get("timi-hero-photo", false);
-        if (photoResult?.value) setPhoto(photoResult.value);
-      } catch {}
-    };
-    load();
-    setTimeout(() => setHeroLoaded(true), 100);
+    loadMessages();
+    const savedPhoto = localStorage.getItem("timi-hero-photo");
+    if (savedPhoto) setPhoto(savedPhoto);
   }, []);
 
-  const save = async (updated) => {
+  const loadMessages = async () => {
     try {
-      await window.storage.set(STORAGE_KEY, JSON.stringify(updated), true);
-    } catch {}
+      setLoading(true);
+      const data = await db("messages?select=*&order=created_at.desc");
+      setMessages(data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePhoto = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       const dataUrl = ev.target.result;
       setPhoto(dataUrl);
-      try { await window.storage.set("timi-hero-photo", dataUrl, false); } catch {}
+      try { localStorage.setItem("timi-hero-photo", dataUrl); } catch {}
     };
     reader.readAsDataURL(file);
   };
@@ -53,33 +69,48 @@ export default function App() {
   const handlePost = async () => {
     if (!name.trim() || !text.trim()) return;
     const newMsg = {
-      id: Date.now(),
       name: name.trim(),
       text: text.trim(),
       emoji,
       time: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
       likes: 0,
     };
-    const updated = [newMsg, ...messages];
-    setMessages(updated);
-    await save(updated);
-    setName(""); setText(""); setEmoji("✨");
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    try {
+      await db("messages", {
+        method: "POST",
+        prefer: "return=representation",
+        body: JSON.stringify(newMsg),
+      });
+      setName(""); setText(""); setEmoji("✨");
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+      loadMessages();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleLike = async (id) => {
+  const handleLike = async (id, currentLikes) => {
     if (liked[id]) return;
-    const updated = messages.map(m => m.id === id ? { ...m, likes: (m.likes || 0) + 1 } : m);
-    setMessages(updated);
-    setLiked(l => ({ ...l, [id]: true }));
-    await save(updated);
+    try {
+      await db(`messages?id=eq.${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ likes: (currentLikes || 0) + 1 }),
+      });
+      setLiked(l => ({ ...l, [id]: true }));
+      setMessages(msgs => msgs.map(m => m.id === id ? { ...m, likes: (m.likes || 0) + 1 } : m));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleDelete = async (id) => {
-    const updated = messages.filter(m => m.id !== id);
-    setMessages(updated);
-    await save(updated);
+    try {
+      await db(`messages?id=eq.${id}`, { method: "DELETE" });
+      setMessages(msgs => msgs.filter(m => m.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handlePasswordSubmit = () => {
@@ -103,6 +134,7 @@ export default function App() {
         @keyframes shimmer { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
         @keyframes pop { 0% { transform:scale(1); } 50% { transform:scale(1.4); } 100% { transform:scale(1); } }
         @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .hero-img { animation: heroReveal 1.2s cubic-bezier(0.16,1,0.3,1) both; }
         .fade-up { animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) both; }
         .card { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; transition: transform 0.2s, box-shadow 0.2s; }
@@ -124,6 +156,7 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: #3a4a3a; border-radius: 10px; }
         .divider { height: 1px; background: linear-gradient(90deg, transparent, #2e3e2e, transparent); }
         .modal { animation: modalIn 0.25s ease both; }
+        .spinner { width: 20px; height: 20px; border: 2px solid #2e3e2e; border-top-color: #7a9e7a; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 2rem auto; }
       `}</style>
 
       {/* Password Modal */}
@@ -253,7 +286,9 @@ export default function App() {
         </div>
 
         {/* Messages */}
-        {messages.length === 0 ? (
+        {loading ? (
+          <div className="spinner" />
+        ) : messages.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem", color: "#3a4e3a", fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: "0.9rem", letterSpacing: "0.05em" }}>
             Be the first to sign the guestbook.
           </div>
@@ -275,7 +310,7 @@ export default function App() {
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "2rem" }}>
                     <button
                       className={`like-btn ${liked[m.id] ? "like-pop" : ""}`}
-                      onClick={() => handleLike(m.id)}
+                      onClick={() => handleLike(m.id, m.likes)}
                       style={{ background: "transparent", border: `1px solid ${liked[m.id] ? "#4a7a4a" : "#2a3a2a"}`, borderRadius: 3, padding: "0.3rem 0.9rem", fontFamily: "'Jost', sans-serif", fontSize: "0.72rem", color: liked[m.id] ? "#7a9e7a" : "#3e5038", letterSpacing: "0.08em", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
                     >
                       {liked[m.id] ? "✦" : "✧"} {m.likes > 0 ? m.likes : ""} {liked[m.id] ? "Loved" : "Love this"}
