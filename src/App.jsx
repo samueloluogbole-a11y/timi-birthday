@@ -28,7 +28,7 @@ export default function App() {
   const [emoji, setEmoji] = useState("✨");
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
-  const [photo, setPhoto] = useState(null);
+ const [photo, setPhoto] = useState("/src/assets/hero.jpeg");
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
