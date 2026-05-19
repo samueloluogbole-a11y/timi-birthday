@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import heroPhoto from "./assets/hero.jpeg";
 
 const EMOJIS = ["🌿", "✨", "🥂", "🌙", "🦋", "💫", "🌾", "🎶", "💌", "🕊️", "🌱", "⭐"];
 const ADMIN_PASSWORD = "Birthday";
@@ -28,19 +29,13 @@ export default function App() {
   const [emoji, setEmoji] = useState("✨");
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
-  const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState(false);
-  const fileRef = useRef(null);
 
-  useEffect(() => {
-    loadMessages();
-    const savedPhoto = localStorage.getItem("timi-hero-photo");
-    if (savedPhoto) setPhoto(savedPhoto);
-  }, []);
+  useEffect(() => { loadMessages(); }, []);
 
   const loadMessages = async () => {
     try {
@@ -54,18 +49,6 @@ export default function App() {
     }
   };
 
-  const handlePhoto = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target.result;
-      setPhoto(dataUrl);
-      try { localStorage.setItem("timi-hero-photo", dataUrl); } catch {}
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handlePost = async () => {
     if (!name.trim() || !text.trim()) return;
     const newMsg = {
@@ -76,52 +59,35 @@ export default function App() {
       likes: 0,
     };
     try {
-      await db("messages", {
-        method: "POST",
-        prefer: "return=representation",
-        body: JSON.stringify(newMsg),
-      });
+      await db("messages", { method: "POST", prefer: "return=representation", body: JSON.stringify(newMsg) });
       setName(""); setText(""); setEmoji("✨");
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
       loadMessages();
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleLike = async (id, currentLikes) => {
     if (liked[id]) return;
     try {
-      await db(`messages?id=eq.${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ likes: (currentLikes || 0) + 1 }),
-      });
+      await db(`messages?id=eq.${id}`, { method: "PATCH", body: JSON.stringify({ likes: (currentLikes || 0) + 1 }) });
       setLiked(l => ({ ...l, [id]: true }));
       setMessages(msgs => msgs.map(m => m.id === id ? { ...m, likes: (m.likes || 0) + 1 } : m));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleDelete = async (id) => {
     try {
       await db(`messages?id=eq.${id}`, { method: "DELETE" });
       setMessages(msgs => msgs.filter(m => m.id !== id));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handlePasswordSubmit = () => {
     if (passwordInput === ADMIN_PASSWORD) {
-      setIsAdmin(true);
-      setShowPasswordPrompt(false);
-      setPasswordInput("");
-      setPasswordError(false);
+      setIsAdmin(true); setShowPasswordPrompt(false); setPasswordInput(""); setPasswordError(false);
     } else {
-      setPasswordError(true);
-      setPasswordInput("");
+      setPasswordError(true); setPasswordInput("");
     }
   };
 
@@ -148,8 +114,6 @@ export default function App() {
         input:focus, textarea:focus { outline: none; border-color: #7a9e7a !important; box-shadow: 0 0 0 3px rgba(122,158,122,0.15); }
         .submit-btn { transition: all 0.2s; font-family: 'Jost', sans-serif; letter-spacing: 0.08em; }
         .submit-btn:hover:not(:disabled) { background: #7a9e7a !important; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(122,158,122,0.3); }
-        .upload-btn:hover { border-color: #7a9e7a !important; color: #7a9e7a !important; }
-        .upload-btn { transition: all 0.2s; }
         ::placeholder { color: #3e5038; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #1a1e1a; }
@@ -184,14 +148,8 @@ export default function App() {
 
       {/* Hero Section */}
       <div style={{ position: "relative", height: "100vh", maxHeight: 700, overflow: "hidden", display: "flex", alignItems: "flex-end" }}>
-        {photo ? (
-          <img src={photo} alt="Timi" className="hero-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
-        ) : (
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, #2a3528 0%, #1a2218 50%, #111411 100%)" }} />
-        )}
-
+        <img src={heroPhoto} alt="Timi" className="hero-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,24,20,0.1) 0%, rgba(20,24,20,0.3) 50%, rgba(20,24,20,0.92) 100%)" }} />
-
         <div style={{ position: "relative", zIndex: 2, padding: "3rem 2.5rem", width: "100%", maxWidth: 760, margin: "0 auto", boxSizing: "border-box" }}>
           <p className="fade-up" style={{ fontFamily: "'Jost', sans-serif", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#7a9e7a", margin: "0 0 0.6rem", animationDelay: "0.1s" }}>A celebration for</p>
           <h1 className="fade-up" style={{ fontWeight: 300, fontSize: "clamp(3rem, 8vw, 5.5rem)", margin: "0 0 0.6rem", lineHeight: 1.05, letterSpacing: "-0.01em", color: "#f0ece4", animationDelay: "0.2s" }}>
@@ -204,8 +162,6 @@ export default function App() {
             Sign the guestbook ↓
           </a>
         </div>
-
-        <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} style={{ display: "none" }} />
       </div>
 
       {/* Guestbook Section */}
