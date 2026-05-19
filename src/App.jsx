@@ -10,7 +10,7 @@ export default function App() {
   const [emoji, setEmoji] = useState("✨");
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
-  const [photo, setPhoto] = useState(null);
+  const [photo, setPhoto] = useState(/src/assets/hero.jpeg);
   const [heroLoaded, setHeroLoaded] = useState(false);
   const fileRef = useRef(null);
 
@@ -20,7 +20,7 @@ export default function App() {
         const result = await window.storage.get(STORAGE_KEY, true);
         if (result?.value) setMessages(JSON.parse(result.value));
         const photoResult = await window.storage.get("timi-hero-photo", false);
-        if (photoResult?.value) setPhoto(photoResult.value);
+        if (photoResult?.value) setPhoto(/src/assets/hero.jpeg);
       } catch {}
     };
     load();
