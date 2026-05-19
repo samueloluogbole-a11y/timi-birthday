@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import heroPhoto from "./assets/hero.jpeg";
 
 const EMOJIS = ["🌿", "✨", "🥂", "🌙", "🦋", "💫", "🌾", "🎶", "💌", "🕊️", "🌱", "⭐"];
 const ADMIN_PASSWORD = "Birthday";
@@ -28,7 +29,7 @@ export default function App() {
   const [emoji, setEmoji] = useState("✨");
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
- const [photo, setPhoto] = useState("/src/assets/hero.jpeg");
+ const [photo, setPhoto] = useState(heroPhoto);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
