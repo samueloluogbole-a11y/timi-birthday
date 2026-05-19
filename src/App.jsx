@@ -10,7 +10,7 @@ export default function App() {
   const [emoji, setEmoji] = useState("✨");
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
-  const [photo, setPhoto] = useState(/src/assets/hero.jpeg);
+  const [photo, setPhoto] = useState(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
   const fileRef = useRef(null);
 
@@ -20,7 +20,7 @@ export default function App() {
         const result = await window.storage.get(STORAGE_KEY, true);
         if (result?.value) setMessages(JSON.parse(result.value));
         const photoResult = await window.storage.get("timi-hero-photo", false);
-        if (photoResult?.value) setPhoto(/src/assets/hero.jpeg);
+        if (photoResult?.value) setPhoto(photoResult.value);
       } catch {}
     };
     load();
@@ -163,7 +163,7 @@ export default function App() {
                 value={text}
                 onChange={e => setText(e.target.value)}
                 placeholder="Write your birthday message…"
-                maxLength={400}
+                maxLength={5000}
                 rows={4}
                 style={{ width: "100%", padding: "0.85rem 1rem", borderRadius: 3, border: "1px solid #2e3e2e", background: "#1a1e1a", color: "#e8e4dc", fontSize: "0.9rem", resize: "vertical", boxSizing: "border-box", lineHeight: 1.7 }}
               />
@@ -175,7 +175,7 @@ export default function App() {
                 ))}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: "'Jost', sans-serif", color: "#3e5038", fontSize: "0.75rem" }}>{text.length} / 400</span>
+                <span style={{ fontFamily: "'Jost', sans-serif", color: "#3e5038", fontSize: "0.75rem" }}>{text.length} / 5000</span>
                 <button
                   className="submit-btn"
                   onClick={handlePost}
