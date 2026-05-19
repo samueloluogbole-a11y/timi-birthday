@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import heroPhoto from "./assets/hero.jpeg";
 
 const EMOJIS = ["🌿", "✨", "🥂", "🌙", "🦋", "💫", "🌾", "🎶", "💌", "🕊️", "🌱", "⭐"];
 const ADMIN_PASSWORD = "Birthday";
@@ -29,7 +28,7 @@ export default function App() {
   const [emoji, setEmoji] = useState("✨");
   const [submitted, setSubmitted] = useState(false);
   const [liked, setLiked] = useState({});
- const [photo, setPhoto] = useState(heroPhoto);
+  const [photo, setPhoto] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
@@ -188,22 +187,12 @@ export default function App() {
         {photo ? (
           <img src={photo} alt="Timi" className="hero-img" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
         ) : (
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, #2a3528 0%, #1a2218 50%, #111411 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem" }}>
-            <div style={{ width: 120, height: 120, borderRadius: "50%", border: "2px dashed #3a4e38", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem", color: "#3a4e38" }}>🌿</div>
-            <button className="upload-btn" onClick={() => fileRef.current?.click()} style={{ fontFamily: "'Jost', sans-serif", fontSize: "0.78rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#5a7a58", background: "transparent", border: "1px solid #3a4e38", borderRadius: 4, padding: "0.6rem 1.4rem", cursor: "pointer" }}>
-              Add Your Photo
-            </button>
-          </div>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, #2a3528 0%, #1a2218 50%, #111411 100%)" }} />
         )}
 
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(20,24,20,0.1) 0%, rgba(20,24,20,0.3) 50%, rgba(20,24,20,0.92) 100%)" }} />
 
         <div style={{ position: "relative", zIndex: 2, padding: "3rem 2.5rem", width: "100%", maxWidth: 760, margin: "0 auto", boxSizing: "border-box" }}>
-          {photo && (
-            <button className="upload-btn" onClick={() => fileRef.current?.click()} style={{ fontFamily: "'Jost', sans-serif", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#7a9e7a", background: "transparent", border: "1px solid #3a5e3a", borderRadius: 4, padding: "0.4rem 1rem", cursor: "pointer", marginBottom: "1.2rem", display: "block" }}>
-              Change Photo
-            </button>
-          )}
           <p className="fade-up" style={{ fontFamily: "'Jost', sans-serif", fontSize: "0.75rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#7a9e7a", margin: "0 0 0.6rem", animationDelay: "0.1s" }}>A celebration for</p>
           <h1 className="fade-up" style={{ fontWeight: 300, fontSize: "clamp(3rem, 8vw, 5.5rem)", margin: "0 0 0.6rem", lineHeight: 1.05, letterSpacing: "-0.01em", color: "#f0ece4", animationDelay: "0.2s" }}>
             Timi
