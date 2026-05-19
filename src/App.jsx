@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 
 const EMOJIS = ["🌿", "✨", "🥂", "🌙", "🦋", "💫", "🌾", "🎶", "💌", "🕊️", "🌱", "⭐"];
 const STORAGE_KEY = "timi-birthday-messages-v2";
+const ADMIN_PASSWORD = "Birthday";
 
 export default function App() {
   const [messages, setMessages] = useState([]);
@@ -12,6 +13,10 @@ export default function App() {
   const [liked, setLiked] = useState({});
   const [photo, setPhoto] = useState(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -71,6 +76,24 @@ export default function App() {
     await save(updated);
   };
 
+  const handleDelete = async (id) => {
+    const updated = messages.filter(m => m.id !== id);
+    setMessages(updated);
+    await save(updated);
+  };
+
+  const handlePasswordSubmit = () => {
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAdmin(true);
+      setShowPasswordPrompt(false);
+      setPasswordInput("");
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+      setPasswordInput("");
+    }
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#1a1e1a", fontFamily: "'Cormorant Garamond', Georgia, serif", color: "#e8e4dc" }}>
       <style>{`
@@ -79,6 +102,7 @@ export default function App() {
         @keyframes heroReveal { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
         @keyframes shimmer { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
         @keyframes pop { 0% { transform:scale(1); } 50% { transform:scale(1.4); } 100% { transform:scale(1); } }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .hero-img { animation: heroReveal 1.2s cubic-bezier(0.16,1,0.3,1) both; }
         .fade-up { animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) both; }
         .card { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both; transition: transform 0.2s, box-shadow 0.2s; }
@@ -86,6 +110,8 @@ export default function App() {
         .like-btn { transition: all 0.15s; cursor: pointer; }
         .like-btn:hover { transform: scale(1.06); }
         .like-pop { animation: pop 0.3s ease; }
+        .delete-btn { transition: all 0.15s; cursor: pointer; }
+        .delete-btn:hover { border-color: #8a4a4a !important; color: #c47a7a !important; }
         input, textarea { font-family: 'Jost', sans-serif; transition: border-color 0.2s, box-shadow 0.2s; }
         input:focus, textarea:focus { outline: none; border-color: #7a9e7a !important; box-shadow: 0 0 0 3px rgba(122,158,122,0.15); }
         .submit-btn { transition: all 0.2s; font-family: 'Jost', sans-serif; letter-spacing: 0.08em; }
@@ -97,7 +123,31 @@ export default function App() {
         ::-webkit-scrollbar-track { background: #1a1e1a; }
         ::-webkit-scrollbar-thumb { background: #3a4a3a; border-radius: 10px; }
         .divider { height: 1px; background: linear-gradient(90deg, transparent, #2e3e2e, transparent); }
+        .modal { animation: modalIn 0.25s ease both; }
       `}</style>
+
+      {/* Password Modal */}
+      {showPasswordPrompt && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="modal" style={{ background: "#212621", border: "1px solid #2e3e2e", borderRadius: 6, padding: "2rem", width: "90%", maxWidth: 360 }}>
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "0.75rem", letterSpacing: "0.15em", textTransform: "uppercase", color: "#6a8a6a", margin: "0 0 1rem" }}>Admin Access</p>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={e => { setPasswordInput(e.target.value); setPasswordError(false); }}
+              onKeyDown={e => e.key === "Enter" && handlePasswordSubmit()}
+              placeholder="Enter password"
+              autoFocus
+              style={{ width: "100%", padding: "0.75rem 1rem", borderRadius: 3, border: `1px solid ${passwordError ? "#8a4a4a" : "#2e3e2e"}`, background: "#1a1e1a", color: "#e8e4dc", fontSize: "0.9rem", boxSizing: "border-box", marginBottom: "0.5rem" }}
+            />
+            {passwordError && <p style={{ fontFamily: "'Jost', sans-serif", color: "#c47a7a", fontSize: "0.75rem", margin: "0 0 0.75rem" }}>Incorrect password. Try again.</p>}
+            <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+              <button onClick={() => { setShowPasswordPrompt(false); setPasswordInput(""); setPasswordError(false); }} style={{ flex: 1, background: "transparent", border: "1px solid #2e3e2e", borderRadius: 3, padding: "0.65rem", fontFamily: "'Jost', sans-serif", fontSize: "0.75rem", color: "#6a8a6a", cursor: "pointer", letterSpacing: "0.08em" }}>Cancel</button>
+              <button onClick={handlePasswordSubmit} style={{ flex: 1, background: "#4a7a4a", border: "none", borderRadius: 3, padding: "0.65rem", fontFamily: "'Jost', sans-serif", fontSize: "0.75rem", color: "#e8f4e8", cursor: "pointer", letterSpacing: "0.08em" }}>Enter</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <div style={{ position: "relative", height: "100vh", maxHeight: 700, overflow: "hidden", display: "flex", alignItems: "flex-end" }}>
@@ -189,6 +239,19 @@ export default function App() {
           )}
         </div>
 
+        {/* Admin toggle */}
+        <div style={{ textAlign: "right", marginBottom: "1.5rem" }}>
+          {isAdmin ? (
+            <button onClick={() => setIsAdmin(false)} style={{ background: "transparent", border: "1px solid #3a4a3a", borderRadius: 3, padding: "0.3rem 0.9rem", fontFamily: "'Jost', sans-serif", fontSize: "0.7rem", color: "#6a8a6a", cursor: "pointer", letterSpacing: "0.08em" }}>
+              Exit Admin Mode
+            </button>
+          ) : (
+            <button onClick={() => setShowPasswordPrompt(true)} style={{ background: "transparent", border: "none", fontFamily: "'Jost', sans-serif", fontSize: "0.65rem", color: "#2e3e2e", cursor: "pointer", letterSpacing: "0.08em" }}>
+              Admin
+            </button>
+          )}
+        </div>
+
         {/* Messages */}
         {messages.length === 0 ? (
           <div style={{ textAlign: "center", padding: "3rem", color: "#3a4e3a", fontFamily: "'Jost', sans-serif", fontWeight: 300, fontSize: "0.9rem", letterSpacing: "0.05em" }}>
@@ -209,13 +272,24 @@ export default function App() {
                   <p style={{ fontStyle: "italic", fontWeight: 300, fontSize: "1.15rem", lineHeight: 1.75, color: "#9a9890", margin: "0 0 1.1rem", paddingLeft: "2rem" }}>
                     "{m.text}"
                   </p>
-                  <button
-                    className={`like-btn ${liked[m.id] ? "like-pop" : ""}`}
-                    onClick={() => handleLike(m.id)}
-                    style={{ background: "transparent", border: `1px solid ${liked[m.id] ? "#4a7a4a" : "#2a3a2a"}`, borderRadius: 3, padding: "0.3rem 0.9rem", fontFamily: "'Jost', sans-serif", fontSize: "0.72rem", color: liked[m.id] ? "#7a9e7a" : "#3e5038", letterSpacing: "0.08em", display: "inline-flex", alignItems: "center", gap: "0.4rem", marginLeft: "2rem" }}
-                  >
-                    {liked[m.id] ? "✦" : "✧"} {m.likes > 0 ? m.likes : ""} {liked[m.id] ? "Loved" : "Love this"}
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginLeft: "2rem" }}>
+                    <button
+                      className={`like-btn ${liked[m.id] ? "like-pop" : ""}`}
+                      onClick={() => handleLike(m.id)}
+                      style={{ background: "transparent", border: `1px solid ${liked[m.id] ? "#4a7a4a" : "#2a3a2a"}`, borderRadius: 3, padding: "0.3rem 0.9rem", fontFamily: "'Jost', sans-serif", fontSize: "0.72rem", color: liked[m.id] ? "#7a9e7a" : "#3e5038", letterSpacing: "0.08em", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+                    >
+                      {liked[m.id] ? "✦" : "✧"} {m.likes > 0 ? m.likes : ""} {liked[m.id] ? "Loved" : "Love this"}
+                    </button>
+                    {isAdmin && (
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDelete(m.id)}
+                        style={{ background: "transparent", border: "1px solid #3a2a2a", borderRadius: 3, padding: "0.3rem 0.9rem", fontFamily: "'Jost', sans-serif", fontSize: "0.72rem", color: "#6a4a4a", letterSpacing: "0.08em" }}
+                      >
+                        ✕ Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {i < messages.length - 1 && <div className="divider" />}
               </div>
